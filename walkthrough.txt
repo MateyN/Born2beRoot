@@ -1,0 +1,189 @@
+--------------------------------------------------------------------------------
+STEP 1 - Installation
+--------------------------------------------------------------------------------
+
+Install (Not Graphical install)
+Choose language (English)
+
+Territory or area: Choose yours. For Me it's Other -> Europe ->
+-> Switzerland -> American English keyboard layout.
+Wait...
+
+Hostname: yourintralogin42 -> Domain name: leave empty ->
+-> Root password: ***** (strong password); Re-enter. Full name: Your full name.
+Real/intra/else, doesn't matter. Username: yourintralogin ->
+Password: ***** -> Time zone: Your time zone (yes).
+Wait..
+
+--------------------------------------------------------------------------------
+SUBSTEP 1.1 - partition setup
+--------------------------------------------------------------------------------
+
+................................................................................
+For basic part:
+Partition method: Guided - use entire disk and set up encrypted LVM ->
+-> SCSIX (0,0,0) (sda) - 8.6 GB ATA VBOX HARDDISK -> separate /home partition ->
+-> yes. 
+Wait..
+Enter encryption passphrase twice -> 8.1G or just max ->
+-> Finish partitioning and write changes to disk -> yes.
+Wait..
+
+Now chill, you have plenty of time to stretch your back while debian is
+installing.
+................................................................................
+
+Scan another CD or DVD? -> No
+Debian archive mirror country -> your nearest mirror or Russian Federation for
+Moscow campus -> deb.debian.org (doesn't matter) ->
+-> leave proxy info field empty and proceed.
+
+Participate in the package usage survey? -> NO!
+
+Soft seclection: remove SSH server & standart system utilities with space(again)
+GRUB - YES! -> /dev/sda
+Installlation completed -> Continue
+
+Virtual war machine is ready.
+
+--------------------------------------------------------------------------------
+STEP 2 - Configure your machine
+--------------------------------------------------------------------------------
+
+Enter your LVM encryption passphrase, log in into your user. GL HF.
+Now we are going to install necessary software and configure it.
+
+###############################################################
+# I prefer Vim, since I have been using it in the school, but #
+#            you can use Nano or Vi as well.                  # 
+###############################################################
+
+--------------------------------------------------------------------------------
+SUBSTEP 2.1 - Installing sudo && adding user in groups
+--------------------------------------------------------------------------------
+
+1) su - -> root password -> apt install sudo
+2) [$ adduser <yourusername> sudo] (yes, you should be in root)
+3) [$ sudo reboot], then log in again
+4) [$ sudo -v] -> password
+5) [$ sudo addgroup user42]
+6) [$ sudo adduser yourusername user42]
+7) [$ sudo apt update]
+
+--------------------------------------------------------------------------------
+SUBSTEP 2.2 - Installing SSH
+--------------------------------------------------------------------------------
+
+1) [$ sudo apt install openssh-server]
+2) [$ sudo nano /etc/ssh/sshd_config] -> change line "#Port 22" to "Port 4242" and
+"#PermitRootLogin prohibit-password" to "PermitRootLogin no" -> save and exit
+3) [$ sudo nano /etc/ssh/ssh_config] -> change line "#Port 22" to "Port 4242"
+4) [$ sudo service ssh status]. It should be active.
+
+--------------------------------------------------------------------------------
+SUBSTEP 2.3 - Installing UFW
+--------------------------------------------------------------------------------
+
+1) [$ sudo apt install ufw]
+2) [$ sudo ufw enable]
+3) [$ sudo ufw allow 4242]
+4) [$ sudo ufw status]. It should be active with 4242 and 4242(v6) ports allow
+from anywhere
+
+--------------------------------------------------------------------------------
+SUBSTEP 2.4 - Configuring sudo
+--------------------------------------------------------------------------------
+
+1) [$ sudo touch /etc/sudoers.d/sudoconfig]
+2) [$ sudo mkdir /var/log/sudo] (for sudo log files, yes)
+3) [$ sudo nano /etc/sudoers.d/sudoconfig] then write next lines in our new file:
+
+************************************************************
+* Defaults      passwd_tries=3                             *
+* Defaults      badpass_message="Incorrect password"       * <- you can set your
+* Defaults      log_input,log_output                       *    own message here
+* Defaults      iolog_dir="/var/log/sudo"                  *
+* Defaults      requiretty                                 *
+* Defaults      secure_path="that/long/paths/from/subject" *
+************************************************************
+
+--------------------------------------------------------------------------------
+SUBSTEP 2.5 - Setting up a strong password policy
+--------------------------------------------------------------------------------
+
+1) [$ sudo nano /etc/login.defs]
+2) replace next lines:
+
+*************************************************
+* PASS_MAX_DAYS    99999 -> PASS_MAX_DAYS    30 *
+* PASS_MIN_DAYS    0     -> PASS_MIN_DAYS    2  *
+*************************************************
+
+PASS_WARN_AGE is 7 by defaults anyway so just leave it like that.
+
+3) [$ sudo apt install libpam-pwquality]
+4) [$ sudo nano /etc/pam.d/common-password]
+5) Add to the end of the "password requisite pam_pwqiality.so retry=3" line next
+parameters
+
+****************************************************************************************
+* minlen=10 ucredit=-1 dcredit=-1 maxrepeat=3 reject_username difok=7 enforce_for_root *
+****************************************************************************************
+
+Then:
+"password requisite pam_pwqiality.so retry=3 minlen=10 ucredit=-1 dcredit=-1 maxrepeat=3 reject_username difok=7 enforce_for_root"
+
+6) Now you have to change all your passwords according to your new password
+policy
+*******************
+* [$ passwd]      * <- change user password
+* [$ sudo passwd] * <- change root password
+*******************
+
+--------------------------------------------------------------------------------
+STEP 4 - Network adapter configuration
+--------------------------------------------------------------------------------
+
+You may not be able to connect to your VM via SSH with standard settings in
+VirtualBox. Theres a way to wix it!
+
+1) Turn off your VM
+2) Go to your VM settings in VirtualBox
+3) Network -> Adapter 1 -> Advanced -> Port forwarding
+4)Add new rule (little green button on right top side) and next parameters:
+
+**************************************************************************
+* Protocol       Host IP       Host Port       Guest IP       Guest Port *
+* TCP            127.0.0.1     4242            10.0.2.15      4242       *
+**************************************************************************
+6) In your host (physical) machine open Terminal and run
+[ssh <vmusername>@localhost -p 4242]
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!              In case it's not working, do the following:                     !
+! 1) Turn off your VM                                                          !
+! 2) Go to your VM settings in VirtualBox                                      !
+! 3) Network -> Adapter 1 -> Attached to: Bridged Adapter & Name: en0: Ethernet!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Now you can control your virtual machine from the host terminal.
+
+---------------------------------------------------------------------------------
+CONCLUSION
+---------------------------------------------------------------------------------
+
+And after all of this manipulations we finally came for our monitoring.sh script
+All guidelines is already exists in README.md file. Theres one more thing to
+install that already listed in monitroing.sh file:
+
+**********************************
+* [$ sudo apt install net-tools] *
+**********************************
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Dont forget to make a clone or snapshot of your VM before evaluation !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Now you are almost ready for evaluation!
+
+It's highly recommended to know what u use and how && why it works! At least, it will be usefull for YOUR and ONLY YOUR defense. GL && HF!
